@@ -1,0 +1,73 @@
+Sub InsertImages()
+'指定したフォルダ内の画像ファイルを一括挿入
+  Dim prs As PowerPoint.Presentation
+  Dim sld As PowerPoint.Slide
+  Dim shp As PowerPoint.Shape
+  Dim placeholder As PowerPoint.Shape
+  Dim tmp As PowerPoint.PpViewType
+  Dim fol As Object, f As Object
+  Dim fol_path As String
+  Dim title As String
+  Dim shLeft As Long, shTop As Long
+Dim shWidth As Long, shHeight As Long
+   
+  Set prs = ActivePresentation
+   
+  'スライドショー表示になっていたら解除
+  If SlideShowWindows.Count > 0 Then prs.SlideShowWindow.View.Exit
+   
+  With ActiveWindow
+    tmp = .ViewType 'ウィンドウの表示モード記憶
+    .ViewType = ppViewNormal
+  End With
+   
+  '画像フォルダ取得
+  Set fol = CreateObject("Shell.Application") _
+            .BrowseForFolder(0, "画像フォルダ選択", &H10, 0)
+  If fol Is Nothing Then GoTo Fin
+  fol_path = fol.Self.Path
+   
+  'フォルダ内のファイル処理
+  With CreateObject("Scripting.FileSystemObject")
+    If Not .FolderExists(fol_path) Then GoTo Fin
+    
+    
+    For Each sld In ActivePresentation.Slides
+        title = sld.Shapes.title.TextFrame.TextRange.Text
+        MsgBox title
+        For Each f In .GetFolder(fol_path).Files
+            Select Case LCase(.GetExtensionName(f.Path))
+                Case "jpg", "jpeg"
+                    If Left(Dir(f.Path), InStrRev(Dir(f.Path), ".") - 1) = title Then
+                        MsgBox Left(Dir(f.Path), InStrRev(Dir(f.Path), ".") - 1)
+                        For Each placeholder In sld.Shapes.Placeholders
+                            placeholder.Select
+                            
+                            shLeft = placeholder.Left
+                            shTop = placeholder.Top
+                            shWidth = placeholder.Width
+                            shHeight = placeholder.Height
+                            '.Delete
+                        
+                            Set shp = sld.Shapes.AddPicture(FileName:=f.Path, _
+                                                            LinkToFile:=False, _
+                                                            SaveWithDocument:=True, _
+                                                            Left:=shLeft, _
+                                                            Top:=shTop, _
+                                                            Width:=shWidth)
+                            With shp
+                              .LockAspectRatio = True '縦横比を固定
+                               
+                              '挿入した画像をスライドのサイズに合わせる
+
+                               
+                            End With
+                         Next
+                    End If
+          End Select
+        Next
+    Next
+  End With
+Fin:
+  ActiveWindow.ViewType = tmp 'ウィンドウの表示モードを元に戻す
+End Sub
